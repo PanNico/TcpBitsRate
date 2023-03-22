@@ -29,6 +29,7 @@ static void process_sigint(int signum) { end_app = 1; }
 
 static void record_traffic_rate(int sockfd) {
   static uint32_t bits_rcvd = 0;
+  int counter_no_bytes = 0;
 
   while (!end_app) {
     if (sec_passed) {
@@ -41,7 +42,15 @@ static void record_traffic_rate(int sockfd) {
       alarm(1);
     }
 
-    bits_rcvd += read(sockfd, &buf, sizeof(buf));
+    int bytes = read(sockfd, &buf, sizeof(buf));
+    if (!bytes) {
+      if (++counter_no_bytes == 5) {
+        end_app = 1;
+      }
+    } else
+      counter_no_bytes = 0;
+
+    bits_rcvd += bytes;
   }
 }
 
