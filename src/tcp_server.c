@@ -40,7 +40,8 @@ int tcp_server_listen(int sockfd) {
   return accept(sockfd, (struct sockaddr*)&cli, &len);
 }
 
-int tcp_server_run(int port, void (*cb)(int), int times) {
+int tcp_server_run(int port, int (*auth_cb)(int), void (*exec_cb)(int),
+                   int times) {
   int sockfd = tcp_server_init(port);
 
   if (sockfd < 0) {
@@ -52,7 +53,7 @@ int tcp_server_run(int port, void (*cb)(int), int times) {
     int connfd = tcp_server_listen(sockfd);
 
     if (connfd > 0) {
-      (*cb)(connfd);
+      if (auth_cb == NULL || !(*auth_cb)(connfd)) (*exec_cb)(connfd);
     }
   }
 
@@ -60,3 +61,16 @@ int tcp_server_run(int port, void (*cb)(int), int times) {
   return 0;
 }
 
+#ifdef TEST_TCP_ACTOR
+void print_hello(int sockfd) { printf("Hello by the server\n"); }
+
+int main(int argc, char** argv) {
+  if (argc != 2) {
+    printf("Invalid number of arguments\n");
+    return -1;
+  }
+
+  int port_num = atoi(argv[1]);
+  return tcp_server_run(port_num, NULL, print_hello, 1);
+}
+#endif

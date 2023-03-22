@@ -10,5 +10,8 @@ void tcp_server_cleanup(int sockfd);
 
 // the argument times is how many times listen for
 // a new connetion before ending it.
-int tcp_server_run(int port, void (*cb)(), int times);
+// auth_cb is a callback used to define a custom authentication
+// between client and server.
+int tcp_server_run(int port, int (*auth_cb)(int), void (*exec_cb)(int),
+                   int times);
 #endif

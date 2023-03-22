@@ -38,7 +38,8 @@ int tcp_client_connect(int sockfd) {
 
 void tcp_client_cleanup(int sockfd) { close(sockfd); }
 
-int tcp_client_run(const char* srv_addr, int srv_port, void (*cb)(int)) {
+int tcp_client_run(const char* srv_addr, int srv_port, int (*auth_cb)(int),
+                   void (*exec_cb)(int)) {
   int sockfd = tcp_client_init(srv_addr, srv_port);
 
   if (sockfd < 0) return -1;
@@ -47,9 +48,23 @@ int tcp_client_run(const char* srv_addr, int srv_port, void (*cb)(int)) {
     return -2;
   }
 
-  (*cb)(sockfd);
+  if (auth_cb == NULL || !(*auth_cb)(sockfd)) (*exec_cb)(sockfd);
+
   tcp_client_cleanup(sockfd);
 
   return 0;
 }
 
+#ifdef TEST_TCP_ACTOR
+void print_hello(int sockfd) { printf("Hello by the client\n"); }
+
+int main(int argc, char** argv) {
+  if (argc != 3) {
+    printf("Invalid number of arguments\n");
+    return -1;
+  }
+
+  int port_num = atoi(argv[2]);
+  return tcp_client_run(argv[1], port_num, NULL, print_hello);
+}
+#endif
